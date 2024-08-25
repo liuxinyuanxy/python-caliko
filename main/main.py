@@ -12,7 +12,7 @@ bone_line_width = 5.0
 constraint_line_width = 2.0
 base_rotation_amount_degs = 0.3
 
-class Demo:
+class DemoLocalHingesWithReferenceAxisConstraints:
     def __init__(self):
         self.structure = None
 
@@ -69,8 +69,9 @@ class Demo:
     def get_structure(self):
         return self.structure
 
+
 if __name__ == "__main__":
-    demo = Demo()
+    demo = DemoLocalHingesWithReferenceAxisConstraints()
     demo.setup()
     structure = demo.get_structure()
     structure.solve_for_target(Vec3f(0.0, 0.0, 0.0))
