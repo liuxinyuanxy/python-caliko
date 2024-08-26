@@ -22,28 +22,45 @@ class FabrikStructure3D:
         for loop in range(num_chains):
             this_chain = self.m_chains[loop]
             connected_chain_number = this_chain.get_connected_chain_number()
-            if connected_chain_number == -1:
+            self.__solve_for_chain(connected_chain_number, new_target_location, this_chain)
+
+    def solve_for_chain(self, chain_number: int, chain_target_location: Vec3f):
+        num_chains = len(self.m_chains)
+        for loop in range(num_chains):
+            this_chain = self.m_chains[loop]
+            connected_chain_number = this_chain.get_connected_chain_number()
+            if loop == chain_number:
+                new_target_location = chain_target_location
+            else:
+                new_target_location = this_chain.get_effector_location()
+
+            self.__solve_for_chain(connected_chain_number, new_target_location, this_chain)
+
+    def __solve_for_chain(self, connected_chain_number, new_target_location, this_chain):
+        if connected_chain_number == -1:
+            this_chain.solve_for_target(new_target_location)
+        else:
+            host_chain = self.m_chains[connected_chain_number]
+            host_bone = host_chain.get_bone(this_chain.get_connected_bone_number())
+            if host_bone.get_bone_connection_point() == BoneConnectionPoint.START:
+                this_chain.set_base_location(host_bone.get_start_location())
+            else:
+                this_chain.set_base_location(host_bone.get_end_location())
+
+            constraint_type = this_chain.get_basebone_constraint_type()
+            if constraint_type in [BaseboneConstraintType3D.LOCAL_ROTOR, BaseboneConstraintType3D.LOCAL_HINGE]:
+                connection_bone_matrix = Mat3f.create_rotation_matrix(host_bone.get_direction_uv())
+                relative_basebone_constraint_uv = connection_bone_matrix.times(
+                    this_chain.m_basebone_constraint_uv).normalised()
+                this_chain.set_basebone_relative_constraint_uv(relative_basebone_constraint_uv)
+                if constraint_type == BaseboneConstraintType3D.LOCAL_HINGE:
+                    this_chain.set_basebone_relative_reference_constraint_uv(
+                        connection_bone_matrix.times(this_chain.get_bone(0).get_joint().get_hinge_reference_axis()))
+
+            if not this_chain.get_embedded_target_mode():
                 this_chain.solve_for_target(new_target_location)
             else:
-                host_chain = self.m_chains[connected_chain_number]
-                host_bone = host_chain.get_bone(this_chain.get_connected_bone_number())
-                if host_bone.get_bone_connection_point() == BoneConnectionPoint.START:
-                    this_chain.set_base_location(host_bone.get_start_location())
-                else:
-                    this_chain.set_base_location(host_bone.get_end_location())
-
-                constraint_type = this_chain.get_basebone_constraint_type()
-                if constraint_type in [BaseboneConstraintType3D.LOCAL_ROTOR, BaseboneConstraintType3D.LOCAL_HINGE]:
-                    connection_bone_matrix = Mat3f.create_rotation_matrix(host_bone.get_direction_uv())
-                    relative_basebone_constraint_uv = connection_bone_matrix.times(this_chain.m_basebone_constraint_uv).normalised()
-                    this_chain.set_basebone_relative_constraint_uv(relative_basebone_constraint_uv)
-                    if constraint_type == BaseboneConstraintType3D.LOCAL_HINGE:
-                        this_chain.set_basebone_relative_reference_constraint_uv(connection_bone_matrix.times(this_chain.get_bone(0).get_joint().get_hinge_reference_axis()))
-
-                if not this_chain.get_embedded_target_mode():
-                    this_chain.solve_for_target(new_target_location)
-                else:
-                    this_chain.solve_for_embedded_target()
+                this_chain.solve_for_embedded_target()
 
     def add_chain(self, chain: FabrikChain3D):
         self.m_chains.append(chain)

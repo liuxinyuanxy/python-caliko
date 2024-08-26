@@ -262,7 +262,9 @@ class FabrikChain3D:
             raise RuntimeError("This chain does not have embedded targets enabled - enable with set_embedded_target_mode(true).")
 
     def solve_for_target(self, new_target):
-        if self.m_last_target_location.approximately_equals(new_target, 0.001) and self.m_last_base_location.approximately_equals(self.get_base_location(), 0.001):
+        if (self.m_last_target_location.approximately_equals(new_target, 0.001)
+                and self.m_last_base_location.approximately_equals(self.get_base_location(), 0.001)
+                and self.m_fixed_base_location.approximately_equals(self.get_base_location(), 0.001)):
             return self.m_current_solve_distance
         best_solution = self.clone_ik_chain()
         best_solve_distance = float('inf')
